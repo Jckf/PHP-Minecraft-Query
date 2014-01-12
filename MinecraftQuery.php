@@ -6,19 +6,43 @@ class MinecraftQueryException extends Exception {
 
 class MinecraftQuery {
     private $socket;
+    private $server_ip;
+    private $server_port;
+    private $timeout;
+
     private $players;
     private $info;
 
-    public function connect($ip, $port = 25565, $timeout = 3) {
+    public function __construct($ip, $port = 25565, $timeout = 3) {
         if (!is_int($timeout) || $timeout < 0)
             throw new InvalidArgumentException('Timeout must be an integer.');
 
-        $this->socket = @fsockopen('udp://' . $ip, (int) $port, $errno, $errstr, $timeout);
+        $this->server_ip = $ip;
+        $this->server_port = (int) $port;
+        $this->timeout = (int) $timeout;
+
+        $this->connect();
+    }
+
+    public function __destruct() {
+        $this->close();
+    }
+
+    public function close() {
+        if ($this->socket !== null) {
+            socket_close($this->socket);
+
+            $this->socket = null;
+        }
+    }
+
+    public function connect() {
+        $this->socket = @fsockopen('udp://' . $this->server_ip, (int) $this->server_port, $errno, $errstr, $this->timeout);
 
         if ($errno || $this->socket === false)
             throw new MinecraftQueryException('Could not create socket: ' . $errstr);
 
-        stream_set_timeout($this->socket, $timeout);
+        stream_set_timeout($this->socket, $this->timeout);
         stream_set_blocking($this->socket, true);
 
         try {
@@ -31,8 +55,6 @@ class MinecraftQuery {
 
             throw new MinecraftQueryException($e->getMessage());
         }
-
-        fclose($this->socket);
     }
     
     public function get_info() {
@@ -71,15 +93,15 @@ class MinecraftQuery {
         $data    = explode("\x00", $data[0]);
 
         $keys = array(
-            'hostname'   => 'HostName',
-            'gametype'   => 'GameType',
-            'version'    => 'Version',
-            'plugins'    => 'Plugins',
-            'map'        => 'Map',
-            'numplayers' => 'Players',
-            'maxplayers' => 'MaxPlayers',
-            'hostport'   => 'HostPort',
-            'hostip'     => 'HostIp'
+            'hostname'   => 'hostname',
+            'gametype'   => 'gametype',
+            'version'    => 'version',
+            'plugins'    => 'plugins',
+            'map'        => 'map',
+            'numplayers' => 'players',
+            'maxplayers' => 'maxplayers',
+            'hostport'   => 'hostport',
+            'hostip'     => 'hostip'
         );
 
         foreach ($data as $key => $value) {
