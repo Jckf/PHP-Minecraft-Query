@@ -36,9 +36,8 @@ class MinecraftPing {
         socket_set_option($this->socket, SOL_SOCKET, SO_SNDTIMEO, array('sec' => $this->timeout, 'usec' => 0));
         socket_set_option($this->socket, SOL_SOCKET, SO_RCVTIMEO, array('sec' => $this->timeout, 'usec' => 0));
 
-        if ($this->socket === false || @socket_connect($this->socket, $this->server_ip, $this->server_port) === false) {
-            throw new MinecraftPingException('Failed to connect or create a socket');
-        }
+        if ($this->socket === false || @socket_connect($this->socket, $this->server_ip, $this->server_port) === false)
+            throw new MinecraftPingException('Failed to connect or create a socket.');
     }
 
     public function query() {
@@ -60,17 +59,16 @@ class MinecraftPing {
         $data = socket_read($this->socket, $length, PHP_NORMAL_READ); // and finally the json string
 
         if ($data === false) {
-            throw new MinecraftPingException('Server didn\'t return any data');
+            throw new MinecraftPingException('Server didn\'t return any data.');
         }
 
         $data = json_decode($data, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            if (function_exists('json_last_error_msg')) {
+            if (function_exists('json_last_error_msg'))
                 throw new MinecraftPingException(json_last_error_msg());
-            }
 
-            throw new MinecraftPingException('JSON parsing failed');
+            throw new MinecraftPingException('JSON parsing failed.');
         }
 
         return $data;
@@ -125,7 +123,7 @@ class MinecraftPing {
             $i |= ($k & 0x7F) << $j++ * 7;
 
             if ($j > 5)
-                throw new MinecraftPingException('VarInt too big');
+                throw new MinecraftPingException('VarInt too big.');
 
             if (($k & 0x80) != 128)
                 break;
